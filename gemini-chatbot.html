@@ -60,10 +60,20 @@
             font-weight: 500;
             cursor: pointer;
             transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .title:hover {
             opacity: 0.7;
+        }
+
+        .logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 0.5rem;
+            object-fit: cover;
         }
 
         .api-btn {
@@ -747,7 +757,10 @@
 
     <!-- Header -->
     <div class="header">
-        <div class="title" id="titleBtn">OpenDoor</div>
+        <div class="title" id="titleBtn">
+            <img src="857e0ceb-1f34-4d5b-b868-be32a87f2c69.png" alt="OpenDoor Logo" class="logo">
+            <span>OpenDoor</span>
+        </div>
         <div class="model-selector">
             <label class="model-label">Model</label>
             <select class="model-select" id="modelSelect">
