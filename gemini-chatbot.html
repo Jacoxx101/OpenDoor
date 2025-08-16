@@ -179,6 +179,11 @@
             z-index: 10;
         }
 
+        [data-theme="dark"] .sidebar {
+            background: #181818 !important;
+            border-right: 1px solid #333333 !important;
+        }
+
         .sidebar.hidden {
             transform: translateX(-100%);
         }
@@ -189,6 +194,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+        }
+
+        [data-theme="dark"] .sidebar-header {
+            border-bottom: 1px solid #333333 !important;
         }
 
         .new-chat-btn {
@@ -227,6 +236,10 @@
         .search-container {
             padding: 1rem;
             border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        [data-theme="dark"] .search-container {
+            border-bottom: 1px solid #333333 !important;
         }
 
         .search-input {
