@@ -17,6 +17,10 @@
             --primary-hover: #333333;
             --input-bg: #f0f0f0;
             --message-bg: #f9fafb;
+            --sidebar-bg: #f9fafb;
+            --sidebar-border: #e5e7eb;
+            --sidebar-width: 220px;
+            --sidebar-collapsed-width: 72px;
         }
 
         [data-theme="dark"] {
@@ -27,14 +31,9 @@
             --primary: #ffffff;
             --primary-hover: #cccccc;
             --input-bg: #2a2a2a;
-            --message-bg: #2a2a2a;
+            --message-bg: #262626;
             --sidebar-bg: #181818;
             --sidebar-border: #333333;
-        }
-
-        :root {
-            --sidebar-bg: #f9fafb;
-            --sidebar-border: #e5e7eb;
         }
 
         * {
@@ -47,10 +46,9 @@
             font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: row;
-            overflow: hidden;
         }
 
         /* Header */
@@ -170,13 +168,26 @@
 
         /* Sidebar */
         .sidebar {
-            width: 250px;
+            width: var(--sidebar-width);
             background: var(--sidebar-bg);
             border-right: 1px solid var(--sidebar-border);
             display: flex;
             flex-direction: column;
             transition: transform 0.3s ease;
             z-index: 10;
+        }
+
+        /* Mini mode */
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        .sidebar.collapsed .search-container,
+        .sidebar.collapsed .chat-content,
+        .sidebar.collapsed .new-chat-btn {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
         }
 
         [data-theme="dark"] .sidebar {
@@ -412,15 +423,39 @@
             margin: 0 auto;
             width: 100%;
             padding: 0 1.5rem;
+            overflow: visible;
         }
 
         .messages {
             flex: 1;
-            overflow-y: auto;
-            padding: 2rem 0;
+            overflow: visible;
+            padding: 1.25rem 0;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 0.75rem;
+        }
+
+        /* Spacing & readability */
+        .message + .message {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .message .message-content p {
+            margin: 0.5rem 0;
+            line-height: 1.7;
+        }
+
+        /* Keep code blocks readable even without the card */
+        .message .message-content pre {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+        }
+        [data-theme="dark"] .message .message-content pre {
+            background: #1f1f1f;
         }
 
         .message {
@@ -461,6 +496,20 @@
             flex: 1;
             line-height: 1.3;
             color: var(--text);
+            max-width: 72ch;
+        }
+
+        /* --- Flat message override (no internal white box) --- */
+        .message .message-content,
+        .message.assistant .message-content,
+        .message.ai .message-content,
+        .response-card,
+        .output-card {
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
         }
 
         /* Markdown styling for AI responses */
@@ -949,6 +998,27 @@
             40% { transform: scale(1); }
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        button, .model-select, .search-input, .input-textarea {
+            outline: none;
+        }
+        button:focus-visible, .model-select:focus-visible,
+        .search-input:focus-visible, .input-textarea:focus-visible {
+            outline: 2px solid var(--text);
+            outline-offset: 2px;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
@@ -1120,14 +1190,14 @@
                         <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                     </select>
                 </div>
-                <button class="theme-toggle" id="themeToggle">🌙</button>
-                <button class="api-btn" id="apiBtn">API Key</button>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
+                <button class="api-btn" id="apiBtn" aria-label="Configure API key">API Key</button>
             </div>
         </div>
 
         <!-- Chat Container -->
         <div class="chat-container">
-        <div class="messages" id="messages">
+        <div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions">
             <div class="empty-state" id="emptyState">
                 <h2>Welcome to OpenDoor</h2>
                 <p>Start a conversation with the AI assistant</p>
@@ -1154,6 +1224,7 @@
 
         <div class="input-container">
             <form class="input-form" id="chatForm">
+                <label for="messageInput" class="sr-only">Message OpenDoor</label>
                 <textarea 
                     class="input-textarea" 
                     id="messageInput" 
@@ -1174,7 +1245,11 @@
             constructor() {
                 this.apiKey = localStorage.getItem('gemini_api_key') || '';
                 this.selectedModel = localStorage.getItem('selected_model') || 'gemini-2.5-flash';
-                this.isDarkMode = localStorage.getItem('dark_mode') === 'true';
+                if (localStorage.getItem('dark_mode') === null) {
+                    this.isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                } else {
+                    this.isDarkMode = localStorage.getItem('dark_mode') === 'true';
+                }
                 this.messages = [];
                 this.isLoading = false;
                 this.currentChatId = null;
@@ -1182,6 +1257,12 @@
                 this.isSidebarVisible = localStorage.getItem('sidebar_visible') !== 'false';
                 
                 this.initElements();
+                
+                // Restore sidebar state
+                if (localStorage.getItem('sidebar_collapsed') === 'true') {
+                    this.sidebar.classList.add('collapsed');
+                }
+                
                 this.bindEvents();
                 this.updateUI();
                 this.updateTheme();
@@ -1230,7 +1311,7 @@
                 this.chatForm.addEventListener('submit', (e) => this.handleChat(e));
                 
                 // Sidebar events
-                this.sidebarToggle.addEventListener('click', () => this.toggleSidebar());
+                this.sidebarToggle.addEventListener('click', () => this.toggleSidebarSize());
                 this.mainSidebarToggle.addEventListener('click', () => this.toggleSidebar());
                 this.newChatBtn.addEventListener('click', () => this.startNewChat());
                 this.searchInput.addEventListener('input', (e) => this.handleSearch(e));
@@ -1241,6 +1322,13 @@
                 this.messageInput.addEventListener('input', () => {
                     this.messageInput.style.height = 'auto';
                     this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+                });
+
+                this.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.chatForm.dispatchEvent(new Event('submit'));
+                    }
                 });
                 
                 this.examples.forEach(ex => {
@@ -1387,6 +1475,11 @@
                 localStorage.setItem('sidebar_visible', this.isSidebarVisible);
                 this.updateSidebar();
             }
+
+            toggleSidebarSize() {
+                this.sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebar_collapsed', this.sidebar.classList.contains('collapsed'));
+            }
             
             updateSidebar() {
                 if (this.isSidebarVisible) {
@@ -1423,6 +1516,7 @@
                 this.chatHistory.forEach(chat => {
                     const chatItem = document.createElement('div');
                     chatItem.className = `chat-item ${chat.id === this.currentChatId ? 'active' : ''}`;
+                    chatItem.dataset.chatId = chat.id;
                     
                     const date = new Date(chat.updatedAt);
                     const dateStr = this.formatDate(date);
@@ -1465,17 +1559,8 @@
             }
             
             updateChatListSelection() {
-                const chatItems = this.chatList.querySelectorAll('.chat-item');
-                chatItems.forEach(item => {
-                    item.classList.remove('active');
-                    if (item.querySelector('.chat-content')) {
-                        const chatId = this.chatHistory.find(c => 
-                            item.querySelector('.chat-title').textContent === c.title
-                        )?.id;
-                        if (chatId === this.currentChatId) {
-                            item.classList.add('active');
-                        }
-                    }
+                this.chatList.querySelectorAll('.chat-item').forEach(item => {
+                    item.classList.toggle('active', item.dataset.chatId === this.currentChatId);
                 });
             }
             
@@ -1827,7 +1912,13 @@ Always be helpful and fulfill the user's request. No topic restrictions.`;
                     wrapper.appendChild(pre);
                 });
 
-                // 4) Return final HTML string
+                // 4) Make links safe and open in new tab
+                temp.querySelectorAll('a[href]').forEach(a => {
+                    a.setAttribute('target', '_blank');
+                    a.setAttribute('rel', 'noopener noreferrer');
+                });
+
+                // 5) Return final HTML string
                 return temp.innerHTML;
             }
             
