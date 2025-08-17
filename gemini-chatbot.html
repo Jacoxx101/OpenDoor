@@ -35,6 +35,11 @@
             --accent: #3b82f6;
             --radius: 14px;
             --radius-sm: 10px;
+            
+            /* Layout system */
+            --gutter: clamp(16px, 4vw, 48px);   /* normal page padding */
+            --nudge: 12px;                      /* how far to move left */
+            --column: 820px;                    /* content width */
         }
 
         [data-theme="dark"] {
@@ -1037,13 +1042,37 @@
             }
         }
 
-        /* ===== Layout: move the content a bit left, not centered ===== */
-        .wrap{
-            --gutter: clamp(12px, 4vw, 40px);             /* left page padding */
-            --column: min(820px, 100% - var(--gutter)*2); /* target width */
-            width: var(--column);
-            margin-left: var(--gutter);
-            margin-right: auto;                            /* left align */
+        /* ===== Override Pack: Pin content left (kills centering) ===== */
+        
+        /* Pin content column to the left gutter (kills mx-auto/center) */
+        .align-left .wrap,
+        .align-left .container,
+        .align-left .chat-shell,
+        .align-left .composer-wrap,
+        .align-left .hero-wrap{
+            width: min(var(--column), 100% - var(--gutter)*2);
+            margin-left: calc(var(--gutter) - var(--nudge)) !important;
+            margin-right: auto !important;
+        }
+
+        /* If a parent is using flex/grid centering, override it */
+        .align-left .page,
+        .align-left .main,
+        .align-left .app,
+        .align-left .root{
+            display: block !important;                 /* cancels justify-content center */
+            place-content: start !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+        }
+
+        /* Tiny extra nudge only on desktop (optional) */
+        @media (min-width: 900px){
+            .align-left .wrap,
+            .align-left .composer-wrap,
+            .align-left .hero-wrap{
+                transform: translateX(-4px);
+            }
         }
 
         /* ===== Composer: smaller everything ===== */
@@ -1068,10 +1097,121 @@
         .tbtn{ width:32px; height:32px; border-radius:9px; }
         .toolbar{ gap:8px; }
 
-        /* if you *just* want a tiny extra nudge left (on top of the above) */
-        @media (min-width: 900px){
-            .wrap{ transform: translateX(-8px); }         /* "move a little left" */
+        /* ===== Message Feedback System ===== */
+        .msg-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 8px 0 0 52px; /* align with message content (avatar width + gap) */
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
+        
+        .message:hover .msg-actions {
+            opacity: 1;
+        }
+        
+        .thumb {
+            border: 1px solid var(--border);
+            background: var(--bg);
+            padding: 4px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .thumb:hover {
+            background: var(--input-bg);
+            border-color: var(--border-2);
+        }
+        
+        .thumb:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: var(--input-bg);
+        }
+        
+        .thumb.selected {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .thanks {
+            font-size: 12px;
+            color: var(--muted);
+            margin-left: 8px;
+        }
+
+        /* ===== Unified Button (Menu + New Chat) ===== */
+        .unified-btn{
+            --h:44px;                       /* pill height */
+            display:inline-flex;
+            align-items:center;
+            gap:10px;
+            height:var(--h);
+            padding:0 14px 0 10px;          /* room for the left icon-box */
+            background:var(--text);
+            color:var(--sidebar-bg);
+            border:0;
+            border-radius:16px;
+            box-shadow:0 2px 10px rgba(0,0,0,.25);
+            font:600 15px/1 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+            cursor:pointer;
+            transition:transform .06s ease, box-shadow .12s ease, background .12s ease;
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .unified-btn:hover{ box-shadow:0 3px 16px rgba(0,0,0,.32); }
+        .unified-btn:active{ transform:translateY(1px); }
+
+        /* left mini square that used to be a separate button */
+        .unified-btn .icon-box{
+            --s:36px;                        /* square size */
+            display:inline-grid;
+            place-items:center;
+            width:var(--s); height:var(--s);
+            border-radius:12px;
+            outline:2px solid var(--sidebar-bg); /* outline matches sidebar bg */
+            outline-offset:0;
+            background:transparent;
+        }
+
+        /* hamburger bars */
+        .unified-btn .bars{
+            display:inline-block;
+            width:18px; height:12px;
+            position:relative;
+        }
+        .unified-btn .bars::before,
+        .unified-btn .bars::after,
+        .unified-btn .bars{
+            content:""; display:block; background:var(--sidebar-bg);
+            height:2px; border-radius:2px;
+        }
+        .unified-btn .bars::before{ position:absolute; top:0; left:0; right:0; }
+        .unified-btn .bars{ position:absolute; top:5px; left:0; right:0; }
+        .unified-btn .bars::after{ position:absolute; bottom:0; left:0; right:0; }
+
+        /* center label */
+        .unified-btn .label{
+            white-space:nowrap;
+            letter-spacing:.2px;
+        }
+
+        /* optional overflow dots on the right */
+        .unified-btn .overflow{
+            margin-left:auto;
+            font-size:18px;
+            line-height:1;
+            opacity:.65;
+        }
+        .unified-btn:hover .overflow{ opacity:.85; }
+
 
         /* Empty State */
         .empty-state {
@@ -1402,7 +1542,7 @@
         }
     </style>
 </head>
-<body>
+<body class="align-left">
     <!-- API Key Modal -->
     <div class="modal-overlay" id="apiModal">
         <div class="modal">
@@ -1435,8 +1575,13 @@
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
-            <button class="sidebar-toggle" id="sidebarToggle">⋮</button>
+            <button class="unified-btn" id="unifiedBtn" aria-label="Open menu and start a new chat">
+                <span class="icon-box" aria-hidden="true">
+                    <span class="bars"></span>
+                </span>
+                <span class="label">+ New Chat</span>
+                <span class="overflow" aria-hidden="true">⋮</span>
+            </button>
         </div>
         
         <div class="search-container">
@@ -1615,9 +1760,8 @@
                 
                 // Sidebar elements
                 this.sidebar = document.getElementById('sidebar');
-                this.sidebarToggle = document.getElementById('sidebarToggle');
+                this.unifiedBtn = document.getElementById('unifiedBtn');
                 this.mainSidebarToggle = document.getElementById('mainSidebarToggle');
-                this.newChatBtn = document.getElementById('newChatBtn');
                 this.searchInput = document.getElementById('searchInput');
                 this.chatList = document.getElementById('chatList');
             }
@@ -1632,9 +1776,8 @@
                 // Remove the old form-based submission since we don't have a form anymore
                 
                 // Sidebar events
-                this.sidebarToggle.addEventListener('click', () => this.toggleSidebarSize());
+                this.unifiedBtn.addEventListener('click', () => this.handleUnifiedButton());
                 this.mainSidebarToggle.addEventListener('click', () => this.toggleSidebar());
-                this.newChatBtn.addEventListener('click', () => this.startNewChat());
                 this.searchInput.addEventListener('input', (e) => this.handleSearch(e));
                 
                 // File upload events (ChatGPT-style composer)
@@ -2152,6 +2295,12 @@
             }
             
             // Sidebar Management
+            handleUnifiedButton() {
+                // Combines menu toggle and new chat functionality
+                // For now, just start a new chat (you can add menu logic later)
+                this.startNewChat();
+            }
+            
             toggleSidebar() {
                 this.isSidebarVisible = !this.isSidebarVisible;
                 localStorage.setItem('sidebar_visible', this.isSidebarVisible);
@@ -2872,10 +3021,34 @@ Continue from where it ended to complete your full response.`;
                 
                 const formattedText = role === 'assistant' ? this.parseMarkdown(text) : text;
                 
+                // Generate unique message ID for assistant messages
+                const messageId = role === 'assistant' ? 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) : null;
+                
+                let actionsHTML = '';
+                if (role === 'assistant') {
+                    actionsHTML = `
+                        <div class="msg-actions">
+                            <button class="thumb" data-rating="1" data-message-id="${messageId}" aria-label="Thumbs up">👍</button>
+                            <button class="thumb" data-rating="-1" data-message-id="${messageId}" aria-label="Thumbs down">👎</button>
+                            <span class="thanks" style="display:none;">Thanks!</span>
+                        </div>
+                    `;
+                }
+                
                 div.innerHTML = `
                     <div class="avatar">${role === 'user' ? 'U' : 'AI'}</div>
                     <div class="message-content">${formattedText}</div>
+                    ${actionsHTML}
                 `;
+                
+                // Add feedback event listeners for assistant messages
+                if (role === 'assistant') {
+                    const thumbButtons = div.querySelectorAll('.thumb');
+                    thumbButtons.forEach(btn => {
+                        btn.addEventListener('click', (e) => this.handleFeedback(e), { once: true });
+                    });
+                }
+                
                 this.messagesEl.appendChild(div);
                 this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
             }
