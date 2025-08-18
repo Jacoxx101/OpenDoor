@@ -118,7 +118,7 @@
         .model-select {
             padding: 0.5rem 2rem 0.5rem 0.75rem;
             background: var(--input-bg);
-            border: 1px solid var(--border);
+            border: none;
             border-radius: 0.375rem;
             color: var(--text);
             font-size: 0.875rem;
@@ -132,21 +132,14 @@
         }
 
         .model-select:hover {
-            border-color: var(--text);
+            opacity: 0.8;
         }
 
         .model-select:focus {
             outline: none;
-            border-color: var(--text);
             background: var(--bg);
         }
 
-        .model-label {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-bottom: 0.25rem;
-            display: block;
-        }
 
         /* Dark Mode Toggle */
         .theme-toggle {
@@ -1013,10 +1006,12 @@
         button, .model-select, .search-input, .input-textarea {
             outline: none;
         }
-        button:focus-visible, .model-select:focus-visible,
-        .search-input:focus-visible, .input-textarea:focus-visible {
+        button:focus-visible, .search-input:focus-visible, .input-textarea:focus-visible {
             outline: 2px solid var(--text);
             outline-offset: 2px;
+        }
+        .model-select:focus-visible {
+            outline: none;
         }
 
         @media (max-width: 768px) {
@@ -1185,9 +1180,8 @@
             </div>
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <div class="model-selector">
-                    <label class="model-label">Model</label>
                     <select class="model-select" id="modelSelect">
-                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
                     </select>
                 </div>
                 <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌙</button>
@@ -1244,7 +1238,7 @@
         class MinimalChat {
             constructor() {
                 this.apiKey = localStorage.getItem('gemini_api_key') || '';
-                this.selectedModel = localStorage.getItem('selected_model') || 'gemini-2.5-flash';
+                this.selectedModel = localStorage.getItem('selected_model') || 'gemini-2.0-flash-exp';
                 if (localStorage.getItem('dark_mode') === null) {
                     this.isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 } else {
